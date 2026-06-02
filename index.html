@@ -158,6 +158,16 @@
             border-radius: 20px;
             transition: all 0.25s ease;
         }
+
+        /* Backup button success animation */
+        @keyframes backupFlash {
+            0% { background-color: #dc2626; transform: scale(1); }
+            50% { background-color: #22c55e; transform: scale(1.05); box-shadow: 0 0 15px #22c55e; }
+            100% { background-color: #dc2626; transform: scale(1); }
+        }
+        .backup-success {
+            animation: backupFlash 0.5s ease-in-out;
+        }
     </style>
 </head>
 <body id="appBody">
@@ -184,8 +194,9 @@
                 <li><a href="#frontend">Frontend (Angular)</a></li>
                 <li><a href="#responsive">Responsive Styling</a></li>
                 <li><a href="#console">Console</a></li>
-				<li><a href="#wpf">WPF</a></li>
-				<li><a href="https://stackoverflow.com/questions/79950252/sheet-in-need-for-a-certain-group-of-programmers" target="_blank">StackOverflow</a></li>
+                <li><a href="#wpf">WPF</a></li>
+                <li><a href="https://stackoverflow.com/questions/79950252/sheet-in-need-for-a-certain-group-of-programmers" target="_blank">StackOverflow</a></li>
+                <li><button id="backupButton" class="text-red-500" style="">Backup</button></li>
             </ul>
         </nav>
     </aside>
@@ -671,6 +682,7 @@ export class TanuloService {
                 </div>
             </div>
 
+            <!-- The rest of the content is preserved but truncated for brevity -->
             <div class="doc-card mb-8">
                 <h2>4. Main List Component (tanulok)</h2>
                 <div class="code-wrapper">
@@ -712,8 +724,9 @@ export class Tanulok implements OnInit {
                     </div>
                 </div>
             </div>
+        </section>
 
-            <div class="doc-card mb-8">
+        <div class="doc-card mb-8">
                 <h2>5. Child Card Component (tanulo-card)</h2>
                 <div class="code-wrapper">
                     <div class="code-container">
@@ -1276,7 +1289,6 @@ namespace Varazsitalok
                     </div>
                 </div>
             </div>
-		</section>
     </main>
 
     <script>
@@ -1292,7 +1304,35 @@ namespace Varazsitalok
             }).catch(err => console.error(err));
         }
 
-        // 20 UNIQUE THEMES
+        // BACKUP FUNCTION: Copies the ENTIRE HTML source code of this page
+        async function backupWebsite() {
+            try {
+                // Get the complete HTML content of the current page
+                const fullHtml = document.documentElement.outerHTML;
+                
+                await navigator.clipboard.writeText(fullHtml);
+                
+                // Visual feedback on the backup button
+                const backupBtn = document.getElementById('backupButton');
+                const originalText = backupBtn.innerHTML;
+                backupBtn.innerHTML = '✅ Backed up!';
+                backupBtn.classList.add('backup-success');
+                backupBtn.style.backgroundColor = '#22c55e';
+                
+                setTimeout(() => {
+                    backupBtn.innerHTML = originalText;
+                    backupBtn.classList.remove('backup-success');
+                    backupBtn.style.backgroundColor = '#dc2626';
+                }, 2000);
+                
+                console.log('Full website backup copied to clipboard!');
+            } catch (err) {
+                console.error('Backup failed: ', err);
+                alert('Backup failed! Press Ctrl+S to save the page manually.');
+            }
+        }
+
+        // 20 UNIQUE THEMES (kept as is)
         const themes = [
             { name: "Midnight Aurora", bodyBg: "#0a0e1a", cardBg: "#111827", textMain: "#e2e8ff", accent: "#3b82f6", border: "#2d3a5e", codeBg: "#030614", btnBg: "#2563eb", btnHover: "#3b82f6", fontFamily: "'JetBrains Mono', monospace" },
             { name: "Sunset Blaze", bodyBg: "#2d1a1a", cardBg: "#4a2c2a", textMain: "#ffeedd", accent: "#ff8c42", border: "#c96f3e", codeBg: "#1e1111", btnBg: "#d45a2b", btnHover: "#f06a3b", fontFamily: "'Outfit', sans-serif" },
@@ -1445,6 +1485,7 @@ namespace Varazsitalok
         
         document.getElementById('randomThemeBtn').addEventListener('click', randomTheme);
         document.getElementById('randomLayoutBtn').addEventListener('click', randomLayout);
+        document.getElementById('backupButton').addEventListener('click', backupWebsite);
     </script>
 </body>
 </html>
