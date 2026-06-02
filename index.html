@@ -28,7 +28,6 @@
             transition: all 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
         }
 
-        /* Sidebar positioning logic */
         .sidebar {
             position: fixed;
             top: 0;
@@ -69,7 +68,6 @@
         .content-top { margin-top: 120px; margin-left: 0; margin-right: 0; width: 100%; }
         .content-bottom { margin-bottom: 100px; margin-left: 0; margin-right: 0; width: 100%; }
         
-        /* Centered main content */
         .content {
             padding: 3rem 4rem;
             max-width: 1300px;
@@ -78,7 +76,6 @@
             transition: all 0.35s ease-in-out;
         }
         
-        /* Center code blocks wrapper */
         .code-wrapper {
             display: flex;
             justify-content: center;
@@ -97,7 +94,6 @@
             .content-bottom { margin-bottom: 140px; }
         }
         
-        /* Enhanced sidebar link styling */
         .nav-menu a {
             position: relative;
             overflow: hidden;
@@ -119,7 +115,6 @@
             width: 100%;
         }
         
-        /* Heading styles */
         h1 {
             font-size: 2.8rem;
             font-weight: 800;
@@ -183,12 +178,12 @@
             <h2>Syntax<span>Hub</span></h2>
         </div>
         <nav class="nav-menu">
-            <p class="nav-title text-xs uppercase tracking-wider font-semibold mb-3 opacity-70" id="categoryLabel">Navigation</p>
+            <p class="nav-title text-xs uppercase tracking-wider font-semibold mb-3 opacity-70">Navigation</p>
             <ul>
                 <li><a href="#backend">Backend</a></li>
                 <li><a href="#frontend">Frontend (Angular)</a></li>
                 <li><a href="#responsive">Responsive Styling</a></li>
-                <li><a href="#wpf-csharp" class="disabled opacity-50 cursor-not-allowed">WPF C# Console</a></li>
+                <li><a href="#console">Console</a></li>
             </ul>
         </nav>
     </aside>
@@ -199,9 +194,10 @@
             <h1>Backend Documentation</h1>
             <p class="section-desc mb-6 text-lg opacity-80">Node.js + SQLite3 database solutions for modern APIs.</p>
 
+            <!-- SQLite3 Example - Full original code -->
             <div class="doc-card mb-8">
-                <h2>1. SQLite3 Example (Async / Callback)</h2>
-                <p>Using <code>sqlite3</code> driver in Express.js with ESM syntax and callback pattern.</p>
+                <h2>1. SQLite3 Example (Async / Callback based)</h2>
+                <p>Using the basic <code>sqlite3</code> driver in an Express.js environment. This library handles requests asynchronously using callback functions, and uses modern <code>import</code> (ESM) syntax.</p>
                 <div class="code-wrapper">
                     <div class="code-container">
                         <div class="code-header flex justify-between items-center p-3 border-b">
@@ -220,43 +216,269 @@ app.use(express.json());
 const db = new sqlite3.Database(`sakila.db`);
 
 app.get('/', (req, res) => {
-    res.json({message: 'Welcome to Film Portal API'});
+    res.json({message: 'Welcome to the Film Portal Backend'});
 });
 
-app.get('/films', (req, res) => {
-    let {limit = 50, offset = 0} = req.query;
-    const sql = `SELECT * FROM film LIMIT ? OFFSET ?`;
-    db.all(sql, [limit, offset], (err, rows) => {
-        if (err) return res.status(400).json({error: err.message});
-        res.json(rows);
-    });
+app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
 });
 
-app.get('/films/:id', (req, res) => {
-    const {id} = req.params;
-    db.get(`SELECT * FROM film WHERE film_id = ?`, [id], (err, row) => {
-        if (err) return res.status(404).json({error: err.message});
-        row ? res.json(row) : res.status(404).json({error: "Film not found"});
-    });
-});
+app.get(`/films`, (req, res) => {
+    try {
+        let {limit, offset} = req.query;
 
-app.post('/films', (req, res) => {
-    const {film_id, title, description, release_year, language_id, rental_duration, rental_rate, length, replacement_cost, rating, special_features} = req.body;
-    const sql = `INSERT INTO film VALUES (?,?,?,?,?,?,?,?,?,?,?, datetime('now'))`;
-    db.run(sql, [film_id, title, description, release_year, language_id, rental_duration, rental_rate, length, replacement_cost, rating, special_features], function(err) {
-        if (err) return res.status(400).json({error: err.message});
-        res.status(201).json({id: this.lastID});
-    });
-});
+        if (!limit || !offset) {
+            limit = 50;
+            offset = 0;
+        }
 
-app.listen(port, () => console.log(`Server on port ${port}`));</code></pre>
+        if (typeof limit !== "number" || typeof offset !== "number") {
+            return res.status(400).json({error: "The parameters have invalid datatypes"})
+        }
+
+        const sql = `select * from film`
+
+        db.all(sql, [], function(error, rows) {
+            if (error) {
+                return res.status(400).json({error: error.message})
+            }
+            return res.status(200).json(rows)
+        })
+    }
+    catch (error) {
+        return res.status(400).json({error: error.message})
+    }
+})
+
+app.get(`/films/:id`, (req, res) => {
+    try {
+        const { id } = req.params;
+
+        if (!id) {
+            return res.status(400).json({message: `invalid parameter`})
+        }
+
+        const sql = `select * from film where film_id = ?`
+
+        db.all(sql, [parseInt(id)], function(error, rows) {
+            if (error) {
+                return res.status(404).json({error: error.message})
+            }
+
+            if (rows.length > 0) {
+                return res.status(200).json(rows)
+            } else {
+                return res.status(404).json({error: "No such film."})
+            }
+        })
+    }
+    catch (error) {
+        return res.status(404).json({error: error.message})
+    }
+})
+
+app.post(`/films`, (req, res) => {
+    try {
+        const {
+            film_id, title, description, release_year, language_id, 
+            original_language_id, rental_duration, rental_rate, length, 
+            replacement_cost, rating, special_features
+        } = req.body
+
+        if (!film_id || !title || !description || !release_year || !language_id ||
+            !rental_duration || !rental_rate || !length || !replacement_cost ||
+            !rating || !special_features) 
+        {
+            return res.status(400).json({error: `A required parameter is missing.`})
+        }
+
+        let date = new Date().toISOString()
+        console.log(date)
+
+        const sql = `insert into film (film_id, title, description, release_year, language_id, rental_duration, rental_rate, length,
+            replacement_cost, rating, special_features, last_update) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`;
+
+        db.run(sql, [film_id, title, description, release_year, language_id, rental_duration, rental_rate, length, replacement_cost, rating, special_features, date], function(error, rows) {
+            if (error) {
+                return res.status(400).json({error: error.message})                
+            }
+            return res.status(201).json({id: this.lastID})
+        })
+    }
+    catch (error) {
+        return res.status(400).json({error: error.message})
+    }
+})
+
+app.get(`/category-films/:category_id`, (req, res) => {
+    try {
+        const {category_id} = req.params;
+        const category_id_num = Number(category_id)
+        const sql_getCategory = `select film.* from film join film_category on film.film_id = film_category.film_id where film_category.category_id = ?`
+        
+        db.all(sql_getCategory, [category_id_num], function(error, rows) {
+            if (error) {
+                return res.status(400).json({error: error.message})
+            }
+            
+            if (rows.length === 0) {
+                return res.status(200).json(rows);
+            }
+
+            const sql = `select * from film where special_features like ?`;
+            db.all(sql, [`%${rows[0].name}%`], function(error2, rows2) {
+                if (error2) {
+                    return res.status(400).json({error: error2.message})
+                }
+                return res.status(200).json(rows2)
+            });
+        })
+    }
+    catch (error) {
+        return res.status(400).json({error: error.message})
+    }
+})
+
+app.get(`/actors`, (req, res) => {
+    try {
+        let {limit, offset} = req.query;
+
+        if (!limit || !offset) {
+            limit = 50;
+            offset = 0;
+        }
+
+        const sql = `select * from actor`
+
+        db.all(sql, [], function(error, rows) {
+            if (error) {
+                return res.status(400).json({error: error.message})
+            }
+            return res.status(200).json(rows)
+        })    
+    }
+    catch (error) {
+        return res.status(400).json({error: error.message})
+    }
+})
+
+app.get(`/categories`, (req, res) => {
+    try {
+        const sql = `select * from category`
+
+        db.all(sql, [], function(error, rows) {
+            if (error) {
+                return res.status(400).json({error: error.message})
+            }
+            return res.status(200).json(rows)
+        })
+    }
+    catch (error) {
+        return res.status(400).json({error: error.message})
+    }
+})
+
+app.get(`/customers`, (req, res) => {
+    try {
+        const sql = `select * from customer`
+        db.all(sql, [], function(error, rows) {
+            if (error) {
+                return res.status(400).json({error: error.message})
+            }
+            return res.status(200).json(rows)
+        })
+    }
+    catch (error) {
+        return res.status(400).json({error: error.message})
+    }
+})
+
+app.get(`/languages`, (req, res) => {
+    try {
+        const sql = `select * from language`
+        db.all(sql, [], function(error, rows) {
+            if (error) {
+                return res.status(400).json({error: error.message})
+            }
+            return res.status(200).json(rows)
+        })
+    }
+    catch (error) {
+        return res.status(400).json({error: error.message})
+    }
+})
+
+app.get(`/film-actors/:id`, (req, res) => {
+    try {
+        const { id } = req.params;
+        const num_id = Number(id)
+
+        const sql_getFilm = `select actor.first_name FROM actor JOIN film_actor ON actor.actor_id = film_actor.actor_id WHERE film_actor.film_id = ?`
+
+        db.all(sql_getFilm, [num_id], function(error, rows) {
+            if (error) {
+                return res.status(400).json({error: error.message})
+            }
+            return res.status(200).json(rows)
+        })
+    }
+    catch (error) {
+        return res.status(400).json({error: error.message})
+    }
+})
+
+app.post(`/actors`, (req, res) => {
+    try {
+        const {actor_id, first_name, last_name} = req.body;
+
+        if (!actor_id || !first_name || !last_name) {
+            return res.status(400).json({message: "Missing parameters"})
+        }
+
+        const sql = `insert into actor (actor_id, first_name, last_name, last_update) values(?, ?, ?, ?)`
+        let date = new Date().toISOString()
+
+        db.run(sql, [actor_id, first_name, last_name, date], function(error ,rows) {
+            if (error) {
+                return res.status(400).json({message: error.message})
+            }
+            return res.status(201).json(this.lastID)
+        })
+    }
+    catch (error) {
+        return res.status(400).json({error: error.message})
+    }
+})
+
+app.get(`/customer-rentals/:customer_id`, (req, res) => {
+    try {
+        const { customer_id } = req.params;
+
+        if (!customer_id) {
+            return res.status(400).json({message: "A required parameter is missing."})
+        }
+
+        const sql = `select rental_id, rental_date, return_date from rental where customer_id = ?`
+
+        db.all(sql, [customer_id], function(error, rows) {
+            if (error) {
+                return res.status(400).json(error.message)
+            }
+            return res.status(200).json(rows)
+        })
+    }
+    catch (error) {
+        return res.status(400).json({error: error.message})
+    }
+})</code></pre>
                     </div>
                 </div>
             </div>
 
+            <!-- Better-SQLite3 Example - Full original code -->
             <div class="doc-card mb-8">
-                <h2>2. Better-SQLite3 (Synchronous / Cinema API)</h2>
-                <p>Using <code>better-sqlite3</code> for synchronous operations. Methods: <code>.all()</code> for many, <code>.get()</code> for one, <code>.run()</code> for mutations.</p>
+                <h2>2. Better-SQLite3 Example (Synchronous / Cinema Network Management API)</h2>
+                <p>This example uses the <code>better-sqlite3</code> package synchronously for a movie watching and film management system. EXAM TIP: Pay attention to the methods! Use <code>.all()</code> for multiple rows, <code>.get()</code> for a single row, and <code>.run()</code> for data manipulation (INSERT, DELETE, UPDATE).</p>
                 <div class="code-wrapper">
                     <div class="code-container">
                         <div class="code-header flex justify-between items-center p-3 border-b">
@@ -269,36 +491,102 @@ const Database = require('better-sqlite3');
 
 const app = express();
 app.use(express.json());
-app.use(cors());
 
+// TODO 1: CORS engedélyezése (cors csomag)
+app.use(cors())
+
+// TODO 3: mozihalo.db adatbázis használata
 const db = new Database('mozihalo.db');
 
+// TODO 5: GET / – üdvözlő JSON üzenet
+app.get("/",  (req, res) => {
+  res.json({message: "Üdvözlés"});
+})
+
+// TODO 6: GET /filmek
 app.get("/filmek", (req, res) => {
   try {
-    const films = db.prepare("SELECT * FROM filmek").all();
-    res.json(films);
-  } catch (error) { res.status(500).json(error.message); }
+    const sql = "select * from filmek";
+    const result = db.prepare(sql).all();
+    return res.status(200).json(result);
+  }
+  catch (error) {
+    return res.status(500).json(error.message);
+  }
 });
 
+// TODO 7: GET /vetites/:vazon (JOIN: fcim, mnev, varos)
 app.get("/vetites/:vazon", (req, res) => {
-  const result = db.prepare(`SELECT filmek.fcim, mozik.mnev, mozik.varos 
-    FROM vetitesek JOIN mozik ON mozik.mazon = vetitesek.mazon 
-    JOIN filmek ON filmek.fazon = vetitesek.fazon WHERE vetitesek.vazon = ?`).get(req.params.vazon);
-  res.json(result);
+  try {
+    const vazon = req.params.vazon;
+    const sql = "SELECT filmek.fcim, mozik.mnev, mozik.varos FROM vetitesek inner join mozik on mozik.mazon = vetitesek.mazon inner join filmek on filmek.fazon = vetitesek.fazon where vetitesek.vazon = ?";
+    const result = db.prepare(sql).get(Number(vazon));
+    return res.status(200).json(result);
+  }
+  catch (error) {
+    return res.status(500).json(error.message);
+  }
 });
 
+// TODO 8: POST /filmek
 app.post("/filmek", (req, res) => {
-  const {fazon, fcim, rendezo, gyartasi_ev, mufaj, jegypont} = req.body;
-  const info = db.prepare("INSERT INTO filmek VALUES (?,?,?,?,?,?)").run(fazon, fcim, rendezo, gyartasi_ev, mufaj, jegypont);
-  res.status(201).json({id: info.lastInsertRowid});
-});
+  try {
+    const {fazon, fcim, rendezo, gyartasi_ev, mufaj, jegypont} = req.body;
+    const sql = "insert into filmek (fazon, fcim, rendezo, gyartasi_ev, mufaj, jegypont) values (?, ?, ?, ?, ?, ?)";
+    const result = db.prepare(sql).run(fazon, fcim, rendezo, gyartasi_ev, mufaj, jegypont);
+    return res.status(201).json({message: "Film sikeresen hozzáadva", id: result.lastInsertRowid});
+  }
+  catch (error) {
+    return res.status(500).json(error.message);
+  }
+})
 
+// TODO 9: DELETE /film/:fazon
 app.delete("/film/:fazon", (req, res) => {
-  db.prepare("DELETE FROM filmek WHERE fazon = ?").run(req.params.fazon);
-  res.json({message: "Deleted"});
-});
+  try {
+    const fazon = Number(req.params.fazon);
+    const sql = "delete from filmek where fazon = ?";
+    const result = db.prepare(sql).run(fazon);
+    return res.status(200).json({message: "Film sikeresen törölve"});
+  }
+  catch (error) {
+    return res.status(500).json(error.message);
+  }
+})
 
-app.listen(8000, () => console.log("Server running"));</code></pre>
+// TODO 10: POST /mozik
+app.post("/mozik", (req, res) => {
+  const {mazon, mnev, varos, termek_szama} = req.body;
+  try {
+    const sql = "insert into mozik (mazon, mnev, varos, termek_szama) values (?, ?, ?, ?)";
+    const result = db.prepare(sql).run(mazon, mnev, varos, termek_szama);
+    return res.status(201).json({message: "Mozi sikeresen hozzáadva", id: result.lastInsertRowid});
+  }
+  catch (error) {
+    return res.status(500).json(error.message);
+  }
+})
+
+// TODO 11: PATCH /vetites/:vazon
+app.patch("/vetites/:vazon", (req, res) => {
+  try {
+    const vazon = Number(req.params.vazon);
+    const {fazon, mazon, kezdete} = req.body;
+    const sql = "update vetitesek set fazon = ?, mazon = ?, kezdete = ? where vazon = ?";
+    const result = db.prepare(sql).run(fazon, mazon, kezdete, vazon);
+    return res.status(200).json({message: "Vetítés sikeresen frissítve"});
+  }
+  catch (error)
+  {
+    return res.status(500).json(error.message);
+  }
+})
+
+// TODO 2: 8000-es port
+const PORT = 8000;
+app.listen(PORT, () => {
+  console.log(`Szerver fut: http://localhost:${PORT}`);
+});</code></pre>
                     </div>
                 </div>
             </div>
@@ -307,39 +595,45 @@ app.listen(8000, () => console.log("Server running"));</code></pre>
         <hr class="my-8 opacity-30">
 
         <section id="frontend">
-            <h1>Frontend (Angular)</h1>
+            <h1>Frontend Documentation (Angular)</h1>
             <p class="section-desc mb-6 text-lg opacity-80">Angular CLI setup, services, components, and routing.</p>
             
             <div class="doc-card mb-8">
-                <h2>1. CLI Commands & HTTP Client</h2>
+                <h2>1. Prerequisites & Project-level Commands</h2>
                 <div class="code-wrapper">
                     <div class="code-container">
-                        <div class="code-header flex justify-between items-center p-3 border-b"><span>Terminal</span><button class="copy-btn" onclick="copyCode('code-cli')">Copy</button></div>
+                        <div class="code-header flex justify-between items-center p-3 border-b"><span>Terminal commands</span><button class="copy-btn" onclick="copyCode('code-cli')">Copy</button></div>
                         <pre><code id="code-cli" class="language-bash">npm init -y
 npm i @angular/cli
-npx ng new syntax-app
-npx ng generate component dashboard
-npx ng generate service api</code></pre>
+npx ng new "projekt neve"
+npx ng generate component "komponens neve"
+npx ng generate service "szervíz neve"</code></pre>
                     </div>
                 </div>
-                <div class="code-wrapper mt-4">
+            </div>
+
+            <div class="doc-card mb-8">
+                <h2>2. HTTP Client Setup (app.config.ts)</h2>
+                <div class="code-wrapper">
                     <div class="code-container">
                         <div class="code-header flex justify-between items-center p-3 border-b"><span>app.config.ts</span><button class="copy-btn" onclick="copyCode('code-config')">Copy</button></div>
                         <pre><code id="code-config" class="language-typescript">import { ApplicationConfig } from '@angular/core';
 import { provideHttpClient } from '@angular/common/http';
 
 export const appConfig: ApplicationConfig = {
-  providers: [provideHttpClient()]
+  providers: [
+    provideHttpClient()
+  ]
 };</code></pre>
                     </div>
                 </div>
             </div>
 
             <div class="doc-card mb-8">
-                <h2>2. Student Service & Components</h2>
+                <h2>3. Student Service Implementation (tanulo.service.ts)</h2>
                 <div class="code-wrapper">
                     <div class="code-container">
-                        <div class="code-header"><span>tanulo.service.ts</span><button class="copy-btn" onclick="copyCode('code-service')">Copy</button></div>
+                        <div class="code-header"><span>tanulo-service.ts</span><button class="copy-btn" onclick="copyCode('code-service')">Copy</button></div>
                         <pre><code id="code-service" class="language-typescript">import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -352,23 +646,226 @@ export interface Tanulo {
   kpmat: number;
 }
 
-@Injectable({providedIn: 'root'})
+@Injectable({
+  providedIn: 'root',
+})
 export class TanuloService {
   private apiUrl = 'http://localhost:8000/tanulok';
   constructor(private http: HttpClient) {}
 
-  getOsszesTanulo(): Observable<Tanulo[]> {
-    return this.http.get<Tanulo[]>(this.apiUrl);
+  getOsszesTanulo(): Observable&lt;Tanulo[]&gt; {
+    return this.http.get&lt;Tanulo[]&gt;(this.apiUrl);
   }
 
-  deleteTanulo(oktazon: number): Observable<any> {
+  deleteTanulo(oktazon: number): Observable&lt;any&gt; {
     return this.http.delete(`http://localhost:8000/tanulo/id/${oktazon}`);
   }
 
-  addTanulo(tanulo: Tanulo): Observable<Tanulo> {
-    return this.http.post<Tanulo>("http://localhost:8000/tanulo", tanulo);
+  addTanulo(tanulo: Tanulo): Observable&lt;Tanulo&gt; {
+    return this.http.post&lt;Tanulo&gt;("http://localhost:8000/tanulo", tanulo);
   }
 }</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="doc-card mb-8">
+                <h2>4. Main List Component (tanulok)</h2>
+                <div class="code-wrapper">
+                    <div class="code-container">
+                        <div class="code-header"><span>tanulok.ts</span><button class="copy-btn" onclick="copyCode('code-tanulok-ts')">Copy</button></div>
+                        <pre><code id="code-tanulok-ts" class="language-typescript">import { Component, OnInit } from '@angular/core';
+import { TanuloService, Tanulo } from '../../services/tanulo-service'; 
+import { CommonModule } from '@angular/common';
+import { TanuloCard } from "../tanulo-card/tanulo-card";
+
+@Component({
+  selector: 'app-tanulok',
+  standalone: true,
+  imports: [CommonModule, TanuloCard],
+  templateUrl: './tanulok.html',
+  styleUrl: './tanulok.css',
+})
+export class Tanulok implements OnInit {
+  TanulokLista: Tanulo[] = []; 
+  constructor(private tanuloService: TanuloService) {}
+
+  ngOnInit() {
+    this.tanuloService.getOsszesTanulo().subscribe((data) => {
+      this.TanulokLista = data;
+    });
+  }
+}</code></pre>
+                    </div>
+                </div>
+                <div class="code-wrapper mt-4">
+                    <div class="code-container">
+                        <div class="code-header"><span>tanulok.html</span><button class="copy-btn" onclick="copyCode('code-tanulok-html')">Copy</button></div>
+                        <pre><code id="code-tanulok-html" class="language-xml">&lt;p&gt;tanulok&lt;/p&gt;
+&lt;div class="grid grid-cols-1 md:grid-cols-3 gap-4"&gt;
+  @for (tanulo of TanulokLista; track tanulo.oktazon) {
+    &lt;app-tanulo-card [tanuloInfo]="tanulo"&gt;&lt;/app-tanulo-card&gt;
+  }
+&lt;/div&gt;</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="doc-card mb-8">
+                <h2>5. Child Card Component (tanulo-card)</h2>
+                <div class="code-wrapper">
+                    <div class="code-container">
+                        <div class="code-header"><span>tanulo-card.ts</span><button class="copy-btn" onclick="copyCode('code-card-ts')">Copy</button></div>
+                        <pre><code id="code-card-ts" class="language-typescript">import { Component, Input, OnInit } from '@angular/core';
+import { TanuloService, Tanulo } from '../../services/tanulo-service'; 
+
+@Component({
+  selector: 'app-tanulo-card',
+  standalone: true,
+  imports: [],
+  templateUrl: './tanulo-card.html',
+})
+export class TanuloCard implements OnInit {
+  @Input() tanuloInfo: Tanulo = {} as Tanulo; 
+  constructor(private tanuloService: TanuloService) {}
+  ngOnInit() { this.test(); }
+  test() { console.log(this.tanuloInfo.nev); }
+
+  torles() {
+    this.tanuloService.deleteTanulo(this.tanuloInfo.oktazon).subscribe({
+      next: () => { console.log("Sikeresen törölve"); },
+      error: (err) => { console.error(err); }
+    });
+  }
+}</code></pre>
+                    </div>
+                </div>
+                <div class="code-wrapper mt-4">
+                    <div class="code-container">
+                        <div class="code-header"><span>tanulo-card.html</span><button class="copy-btn" onclick="copyCode('code-card-html')">Copy</button></div>
+                        <pre><code id="code-card-html" class="language-xml">&lt;div class="w-full max-w-md px-8 py-4 m-5 bg-green-300 rounded-lg shadow-lg"&gt;
+    &lt;h2 class="text-xl font-semibold text-gray-800"&gt;{{ tanuloInfo.nev }}&lt;/h2&gt;
+    &lt;p&gt;Oktatási azonosító: {{ tanuloInfo.oktazon }}&lt;/p&gt;
+    &lt;p&gt;Hozott pontok: {{ tanuloInfo.hozott }}&lt;/p&gt;
+    &lt;p&gt;KpMagy: {{ tanuloInfo.kpmagy }}&lt;/p&gt;
+    &lt;p&gt;KpMat: {{ tanuloInfo.kpmat }}&lt;/p&gt;
+    &lt;button class="bg-green-700 text-white px-4 py-2 rounded mt-2 hover:bg-green-800 transition-colors" (click)="torles()"&gt;Törlés&lt;/button&gt;
+&lt;/div&gt;</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="doc-card mb-8">
+                <h2>6. Data Entry Form (Template-driven Form)</h2>
+                <div class="code-wrapper">
+                    <div class="code-container">
+                        <div class="code-header"><span>tanulo-form.ts</span><button class="copy-btn" onclick="copyCode('code-form-ts')">Copy</button></div>
+                        <pre><code id="code-form-ts" class="language-typescript">import { Component } from '@angular/core';
+import { FormsModule } from '@angular/forms'; 
+import { TanuloService } from '../../services/tanulo-service';
+
+@Component({
+  selector: 'app-tanulo-form',
+  standalone: true,
+  imports: [FormsModule], 
+  templateUrl: './tanulo-form.html',
+})
+export class TanuloForm {
+  constructor(private TanuloService: TanuloService) {}
+
+  onSubmit(form: any) {
+    console.log(form.value);
+    this.TanuloService.addTanulo(form.value).subscribe({
+      next: (response) => { console.log("Sikeres hozzáadás:", response); },
+      error: (err) => { console.error("Hiba a hozzáadás során:", err); }
+    });
+  }
+}</code></pre>
+                    </div>
+                </div>
+                <div class="code-wrapper mt-4">
+                    <div class="code-container">
+                        <div class="code-header"><span>tanulo-form.html</span><button class="copy-btn" onclick="copyCode('code-form-html')">Copy</button></div>
+                        <pre><code id="code-form-html" class="language-xml">&lt;div class="max-w-md mx-auto mt-10 bg-white shadow-lg rounded-lg overflow-hidden"&gt;
+    &lt;div class="text-2xl py-4 px-6 bg-green-600 text-white text-center font-bold uppercase"&gt;Új tanuló felvétele&lt;/div&gt;
+    &lt;form #newStudentForm="ngForm" class="py-4 px-6" (ngSubmit)="onSubmit(newStudentForm)"&gt;
+        &lt;div class="mb-4"&gt;
+            &lt;label class="block text-gray-700 font-bold mb-2" for="azonosito"&gt;Oktatási azonosító&lt;/label&gt;
+            &lt;input class="shadow border rounded w-full py-2 px-3 text-gray-700" id="azonosito" type="text" required name="oktazon" ngModel/&gt;
+
+            &lt;label class="block text-gray-700 font-bold mb-2 mt-4" for="nev"&gt;Név&lt;/label&gt;
+            &lt;input class="shadow border rounded w-full py-2 px-3 text-gray-700" id="nev" type="text" required name="nev" ngModel/&gt;
+        &lt;/div&gt;
+
+        &lt;div class="mb-4"&gt;
+            &lt;label class="block text-gray-700 font-bold mb-2" for="hozott"&gt;Hozott pontszám&lt;/label&gt;
+            &lt;input class="shadow border rounded w-full py-2 px-3 text-gray-700" id="hozott" type="number" required name="hozott" ngModel/&gt;
+
+            &lt;label class="block text-gray-700 font-bold mb-2 mt-4" for="kpmagy"&gt;KpMagy&lt;/label&gt;
+            &lt;input class="shadow border rounded w-full py-2 px-3 text-gray-700" id="kpmagy" type="number" required name="kpmagy" ngModel/&gt;
+
+            &lt;label class="block text-gray-700 font-bold mb-2 mt-4" for="kpmat"&gt;KpMat&lt;/label&gt;
+            &lt;input class="shadow border rounded w-full py-2 px-3 text-gray-700" id="kpmat" type="number" required name="kpmat" ngModel/&gt;
+        &lt;/div&gt;
+
+        &lt;div class="flex items-center justify-center mb-4"&gt;
+            &lt;button class="bg-green-600 text-white py-2 px-4 rounded hover:bg-gray-800 transition-colors" type="submit"&gt;Mentés&lt;/button&gt;
+        &lt;/div&gt;
+    &lt;/form&gt;
+&lt;/div&gt;</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="doc-card mb-8">
+                <h2>7. Routing (Routing / Template Navigation)</h2>
+                <h3>A) app.routes.ts</h3>
+                <div class="code-wrapper">
+                    <div class="code-container">
+                        <div class="code-header"><span>app.routes.ts</span><button class="copy-btn" onclick="copyCode('code-routes-ts')">Copy</button></div>
+                        <pre><code id="code-routes-ts" class="language-typescript">import { Routes } from '@angular/router';
+import { Main } from './components/main/main';
+import { Tanulok } from './components/tanulok/tanulok';
+import { TanuloForm } from './components/tanulo-form/tanulo-form';
+
+export const routes: Routes = [
+  { path: '', component: Main },
+  { path: "tanulok", component: Tanulok },
+  { path: 'tanuloForm', component: TanuloForm },
+  { path: '**', redirectTo: '' }
+];</code></pre>
+                    </div>
+                </div>
+                <h3 class="mt-4">B) Menu Component and Template</h3>
+                <div class="code-wrapper mt-2">
+                    <div class="code-container">
+                        <div class="code-header"><span>menu.ts</span><button class="copy-btn" onclick="copyCode('code-menu-ts')">Copy</button></div>
+                        <pre><code id="code-menu-ts" class="language-typescript">import { Component } from '@angular/core';
+import { RouterOutlet, RouterLink } from '@angular/router'; 
+
+@Component({
+  standalone: true,
+  selector: 'app-menu',
+  imports: [RouterOutlet, RouterLink], 
+  templateUrl: './menu.html',
+})
+export class Menu {}</code></pre>
+                    </div>
+                </div>
+                <div class="code-wrapper mt-4">
+                    <div class="code-container">
+                        <div class="code-header"><span>menu.html</span><button class="copy-btn" onclick="copyCode('code-menu-html')">Copy</button></div>
+                        <pre><code id="code-menu-html" class="language-xml">&lt;nav class="bg-green-600 p-4 shadow-md"&gt;
+  &lt;div class="container mx-auto flex justify-between items-center"&gt;
+    &lt;h1 class="text-white text-xl font-semibold"&gt;Navigáció&lt;/h1&gt;
+    &lt;div class="flex space-x-6"&gt;
+      &lt;a routerLink="/" class="text-white hover:text-green-100 transition-colors"&gt;Főoldal&lt;/a&gt;
+      &lt;a routerLink="/tanulok" class="text-white hover:text-green-100 transition-colors"&gt;Tanulók&lt;/a&gt;
+      &lt;a routerLink="/tanuloForm" class="text-white hover:text-green-100 transition-colors"&gt;Új tanuló&lt;/a&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/nav&gt;
+&lt;router-outlet&gt;&lt;/router-outlet&gt;</code></pre>
                     </div>
                 </div>
             </div>
@@ -377,27 +874,108 @@ export class TanuloService {
         <hr class="my-8 opacity-30">
 
         <section id="responsive">
-            <h1>Responsive Styling</h1>
-            <p class="section-desc mb-6 text-lg opacity-80">Tailwind CSS mobile-first breakpoints & patterns.</p>
-            <div class="doc-card">
-                <h2>Tailwind CDN + Breakpoints</h2>
+            <h1>Responsive Styling (Tailwind CSS)</h1>
+            <p class="section-desc mb-6 text-lg opacity-80">A fundamental part of modern web development is a layout that adapts to different devices. Tailwind follows the Mobile-First principle.</p>
+
+            <div class="doc-card mb-8">
+                <h2>Tailwind Play CDN (Include in the Head section)</h2>
+                <p>Copy this script tag into the <code>&lt;head&gt;</code> section of your <code>index.html</code> file to immediately use Tailwind classes without a separate installation:</p>
                 <div class="code-wrapper">
                     <div class="code-container">
-                        <div class="code-header"><span>index.html head</span><button class="copy-btn" onclick="copyCode('code-cdn-script')">Copy</button></div>
+                        <div class="code-header"><span>HTML Head Snippet</span><button class="copy-btn" onclick="copyCode('code-cdn-script')">Copy</button></div>
                         <pre><code id="code-cdn-script" class="language-xml">&lt;script src="https://cdn.tailwindcss.com"&gt;&lt;/script&gt;</code></pre>
                     </div>
                 </div>
-                <div class="mt-6 grid gap-3">
-                    <div class="bg-black/20 p-4 rounded-xl"><code class="text-sm">sm:</code> ≥640px  |  <code>md:</code> ≥768px  |  <code>lg:</code> ≥1024px  |  <code>xl:</code> ≥1280px</div>
-                    <div class="bg-black/20 p-4 rounded-xl"><code class="text-sm">flex flex-col md:flex-row</code> → column on mobile, row on tablet+</div>
-                    <div class="bg-black/20 p-4 rounded-xl"><code class="text-sm">grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4</code> → adaptive card grid</div>
-                </div>
+            </div>
+
+            <div class="doc-card mb-8">
+                <h2>1. Basic Breakpoints (Screen Sizes)</h2>
+                <p>In Tailwind, responsiveness is handled with prefixes. Base classes apply on mobile, then we use breakpoints for larger sizes:</p>
+                <ul class="list-disc pl-6 mt-2 space-y-1">
+                    <li><code>sm:</code> ≥ 640px – Larger mobiles / small tablets</li>
+                    <li><code>md:</code> ≥ 768px – Tablets (The most common breakpoint in exams)</li>
+                    <li><code>lg:</code> ≥ 1024px – Laptops, standard desktop monitors</li>
+                    <li><code>xl:</code> ≥ 1280px – High-resolution monitors</li>
+                </ul>
+            </div>
+
+            <div class="doc-card">
+                <h2>2. Common Responsive Patterns & Best Practices</h2>
+                <p><strong>A) Flexbox direction change (e.g., Menu bars):</strong> On mobile, elements stack vertically, while on desktop they align horizontally.</p>
+                <code class="block p-3 mb-4 bg-black/20 rounded">class="flex flex-col md:flex-row justify-between"</code>
+
+                <p><strong>B) Dynamic Grid columns (e.g., Product cards):</strong> A single column on mobile, two on tablets, and four columns on large screens.</p>
+                <code class="block p-3 mb-4 bg-black/20 rounded">class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"</code>
+
+                <p><strong>C) Intelligent widths:</strong> Avoid fixed percentages on mobile! The container should be full width on mobile, and only halved on larger screens.</p>
+                <code class="block p-3 bg-black/20 rounded">class="w-full md:w-1/2 mx-auto"</code>
             </div>
         </section>
+		
+		<hr class="my-8 opacity-30">
+
+        <section id="console">
+            <h1>Console Documentation (C#)</h1>
+            <p class="section-desc mb-6 text-lg opacity-80">Basic abstraction in console.</p>
+            
+            <div class="doc-card mb-8">
+                <h2>1. Creation of an abstract class</h2>
+                <div class="code-wrapper">
+                    <div class="code-container">
+                        <div class="code-header flex justify-between items-center p-3 border-b"><span>C#</span><button class="copy-btn" onclick="copyCode('code-cli')">Copy</button></div>
+                        <pre><code id="code-cli" class="language-bash">
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace HajosFeladat
+{
+    public abstract class Hajo
+    {
+        public string Nev { get; set; }
+        public int Hossz { get; set; }
+        public int Suly { get; set; }
+        public int MaxSebesseg{ get; set; }
+        public int GyartasEve{ get; set; }
+
+        protected Hajo(string nev, int hossz, int suly, int maxSebesseg, int gyartasEve)
+        {
+            Nev = nev;
+            Hossz = hossz;
+            Suly = suly;
+            MaxSebesseg = maxSebesseg;
+            GyartasEve = gyartasEve;
+        }
+
+        public abstract void Haladas();
+        public abstract void Leiras();
+        public double megteszTavolsag(int tavolsag) 
+        {
+            return tavolsag / MaxSebesseg;
+        }
+
+        public override string ToString()
+        {
+            return $"{Nev}, {Hossz}, {Suly}, {MaxSebesseg}";
+        }
+    }
+}
+
+</code></pre>
+                    </div>
+                </div>
+            </div>
+			
+			
+
+            </section>
     </main>
 
     <script>
         hljs.highlightAll();
+        
         function copyCode(elementId) {
             const codeText = document.getElementById(elementId).innerText;
             navigator.clipboard.writeText(codeText).then(() => {
@@ -408,7 +986,7 @@ export class TanuloService {
             }).catch(err => console.error(err));
         }
 
-        // 20 UNIQUE THEMES with randomized font sizes
+        // 20 UNIQUE THEMES
         const themes = [
             { name: "Midnight Aurora", bodyBg: "#0a0e1a", cardBg: "#111827", textMain: "#e2e8ff", accent: "#3b82f6", border: "#2d3a5e", codeBg: "#030614", btnBg: "#2563eb", btnHover: "#3b82f6", fontFamily: "'JetBrains Mono', monospace" },
             { name: "Sunset Blaze", bodyBg: "#2d1a1a", cardBg: "#4a2c2a", textMain: "#ffeedd", accent: "#ff8c42", border: "#c96f3e", codeBg: "#1e1111", btnBg: "#d45a2b", btnHover: "#f06a3b", fontFamily: "'Outfit', sans-serif" },
@@ -432,14 +1010,13 @@ export class TanuloService {
             { name: "Frosted Lavender", bodyBg: "#1a142f", cardBg: "#2d2352", textMain: "#ede9fe", accent: "#818cf8", border: "#5b4c8c", codeBg: "#0f0a1f", btnBg: "#6366f1", btnHover: "#818cf8", fontFamily: "'Plus Jakarta Sans', sans-serif" }
         ];
 
-        // Random font size ranges for different text elements
         function getRandomFontSizes() {
             return {
-                h1: `${Math.floor(Math.random() * (52 - 36 + 1) + 36)}px`,      // 36px to 52px
-                h2: `${Math.floor(Math.random() * (38 - 28 + 1) + 28)}px`,      // 28px to 38px
-                body: `${Math.floor(Math.random() * (20 - 15 + 1) + 15)}px`,    // 15px to 20px
-                code: `${Math.floor(Math.random() * (17 - 13 + 1) + 13)}px`,    // 13px to 17px
-                sidebarLink: `${Math.floor(Math.random() * (18 - 14 + 1) + 14)}px` // 14px to 18px
+                h1: `${Math.floor(Math.random() * (52 - 36 + 1) + 36)}px`,
+                h2: `${Math.floor(Math.random() * (38 - 28 + 1) + 28)}px`,
+                body: `${Math.floor(Math.random() * (20 - 15 + 1) + 15)}px`,
+                code: `${Math.floor(Math.random() * (17 - 13 + 1) + 13)}px`,
+                sidebarLink: `${Math.floor(Math.random() * (18 - 14 + 1) + 14)}px`
             };
         }
 
@@ -481,7 +1058,6 @@ export class TanuloService {
                 btn.onmouseleave = () => btn.style.backgroundColor = theme.btnBg;
             });
             
-            // Apply random font sizes to headings
             document.querySelectorAll('h1').forEach(h => {
                 h.style.color = theme.textMain;
                 h.style.background = `linear-gradient(135deg, ${theme.accent}, ${theme.textMain})`;
@@ -500,7 +1076,6 @@ export class TanuloService {
             document.querySelectorAll('.logo span').forEach(span => span.style.color = theme.accent);
             document.querySelectorAll('.logo h2').forEach(logo => logo.style.fontSize = `${Math.floor(parseInt(fontSizes.h1) * 0.6)}px`);
             
-            // Sidebar links with random font size
             document.querySelectorAll('.nav-menu a:not(.disabled)').forEach(link => {
                 link.style.color = theme.textMain;
                 link.style.fontWeight = "600";
@@ -544,7 +1119,6 @@ export class TanuloService {
             });
         }
         
-        // Sidebar position
         const positions = ['left', 'right', 'top', 'bottom'];
         function setSidebarPosition(pos) {
             const sidebar = document.getElementById('dynamicSidebar');
@@ -557,13 +1131,8 @@ export class TanuloService {
             else if(pos === 'bottom') { sidebar.classList.add('sidebar-bottom'); content.classList.add('content-bottom'); }
         }
         
-        function randomLayout() { 
-            setSidebarPosition(positions[Math.floor(Math.random() * positions.length)]); 
-        }
-        
-        function randomTheme() { 
-            applyTheme(themes[Math.floor(Math.random() * themes.length)]); 
-        }
+        function randomLayout() { setSidebarPosition(positions[Math.floor(Math.random() * positions.length)]); }
+        function randomTheme() { applyTheme(themes[Math.floor(Math.random() * themes.length)]); }
         
         applyTheme(themes[0]);
         setSidebarPosition('left');
