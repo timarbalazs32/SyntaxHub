@@ -920,10 +920,11 @@ export class Menu {}</code></pre>
             
             <div class="doc-card mb-8">
                 <h2>1. Creation of an abstract class</h2>
+				<p>Here you can see a basic snippet of an abstract class made in C#.</p>
                 <div class="code-wrapper">
                     <div class="code-container">
-                        <div class="code-header flex justify-between items-center p-3 border-b"><span>C#</span><button class="copy-btn" onclick="copyCode('code-cli')">Copy</button></div>
-                        <pre><code id="code-cli" class="language-bash">
+                        <div class="code-header flex justify-between items-center p-3 border-b"><span>Hajo.cs</span><button class="copy-btn" onclick="copyCode('code-cli')">Copy</button></div>
+                        <pre><code id="code-csharp" class="code-csharp">
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -969,7 +970,101 @@ namespace HajosFeladat
             </div>
 			
 			
+			<div class="doc-card mb-8">
+                <h2>2. Creation of a child class</h2>
+				<p>This snippet shows a child class of the class above.</p>
+                <div class="code-wrapper">
+                    <div class="code-container">
+                        <div class="code-header flex justify-between items-center p-3 border-b"><span>Vitorlas.cs</span><button class="copy-btn" onclick="copyCode('code-cli')">Copy</button></div>
+                        <pre><code id="code-csharp" class="code-csharp">
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
+namespace HajosFeladat
+{
+    public class Vitorlas : Hajo
+    {
+        public int VitorlakSzama{ get; set; }
+
+        public Vitorlas(string nev, int hossz, int suly, int maxSebesseg, int gyartasEve, int vitorlakSzama) : base(nev, hossz, suly, maxSebesseg, gyartasEve)
+        {
+            VitorlakSzama = vitorlakSzama;
+        }
+
+        public override void Haladas()
+        {
+            Console.WriteLine( "A vitorlás a szél segítségével siklik a vízen");
+        }
+
+        public override void Leiras()
+        {
+            Console.WriteLine("Könnyű vitorlás hajó, tengeri kalandokhoz");
+        }
+
+        public override string ToString()
+        {
+            return $"{Nev}, {Hossz}, {Suly}, {MaxSebesseg}, {VitorlakSzama}";
+        }
+    }
+}
+
+
+</code></pre>
+                    </div>
+                </div>
+            </div>
+			
+			<div class="doc-card mb-8">
+                <h2>3. Usage of the classes and testing</h2>
+				<p>This pice of code shows how you can group the classes into one list and iterate through them, calling their <code>.ToString()</code> method.</p>
+                <div class="code-wrapper">
+                    <div class="code-container">
+                        <div class="code-header flex justify-between items-center p-3 border-b"><span>Program.cs</span><button class="copy-btn" onclick="copyCode('code-cli')">Copy</button></div>
+                        <pre><code id="code-csharp" class="code-csharp">
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace HajosFeladat
+{
+    internal class Program
+    {
+        static void Main(string[] args)
+        {
+            List<Hajo> hajok = new List<Hajo>();
+
+            Vitorlas vitrlas1 = new Vitorlas("a", 2, 3, 4, 5, 6);
+            Vitorlas vitorlas2 = new Vitorlas("b", 7, 8, 9, 10, 11);
+            Teher teher1 = new Teher("c", 12, 13, 14, 15, 16);
+            Teher teher2 = new Teher("d", 17, 18, 19, 20, 21);
+
+            hajok.Add(vitrlas1);
+            hajok.Add(vitorlas2);
+            hajok.Add(teher1);
+            hajok.Add(teher2);
+
+            // Teszt
+
+            foreach (var item in hajok)
+            {
+                Console.WriteLine(item.ToString());
+            }
+        }
+    }
+}
+
+
+
+</code></pre>
+                    </div>
+                </div>
+            </div>
+			
             </section>
     </main>
 
