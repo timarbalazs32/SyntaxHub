@@ -184,6 +184,7 @@
                 <li><a href="#frontend">Frontend (Angular)</a></li>
                 <li><a href="#responsive">Responsive Styling</a></li>
                 <li><a href="#console">Console</a></li>
+				<li><a href="#wpf">WPF</a></li>
             </ul>
         </nav>
     </aside>
@@ -1066,6 +1067,215 @@ namespace HajosFeladat
             </div>
 			
             </section>
+			
+			
+			<hr class="my-8 opacity-30">
+
+        <section id="wpf">
+            <h1>WPF Documentation</h1>
+            <p class="section-desc mb-6 text-lg opacity-80">.NET WPF in C#</p>
+            
+            <div class="doc-card mb-8">
+                <h2>1. Import the <code>.csv</code> file into the project</h2>
+				<p>Import the <code>.csv</code> file into the project and make sure its <code>Copy to Output Directory</code> property is set to <code>Copy always</code></p>
+            </div>
+			
+			<div class="doc-card mb-8">
+                <h2>2. The basic structure of the MainWindow.xaml</h2>
+				<p>There is a basic <code>.xaml</code> file with <code>DataGrid</code>, <code>Menu</code>, <code>MenuItem</code> and <code>ComboBox</code> elements.</p>
+                <div class="code-wrapper">
+                    <div class="code-container">
+                        <div class="code-header flex justify-between items-center p-3 border-b"><span>MainWindow.xaml</span><button class="copy-btn" onclick="copyCode('code-cli')">Copy</button></div>
+                        <pre><code id="code-xml" class="language-xml">
+&lt;Window x:Class="Varazsitalok.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Varazsitalok"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="800"&gt;
+    &lt;Grid&gt;
+        &lt;Grid.RowDefinitions&gt;
+            &lt;RowDefinition Height="14*"/&gt;
+            &lt;RowDefinition Height="165*"/&gt;
+            &lt;RowDefinition Height="38*"/&gt;
+        &lt;/Grid.RowDefinitions&gt;
+
+        &lt;Menu&gt;
+            &lt;MenuItem Height="30" FontSize="18" Header="Fájl"&gt;
+                &lt;MenuItem Header="Betöltés" Click="MenuItem_Click"&gt;&lt;/MenuItem&gt;
+            &lt;/MenuItem&gt;
+        &lt;/Menu&gt;
+
+        &lt;DataGrid x:Name="datagrid" Grid.Row="1"&gt;&lt;/DataGrid&gt;
+
+        &lt;ComboBox x:Name="comboboxNevek" Grid.Row="2" Width="200" SelectionChanged="comboboxNevek_SelectionChanged"&gt;&lt;/ComboBox&gt;
+        &lt;Button x:Name="buttonOsszes" Grid.Row="1" Margin="0,330,505,0" Grid.RowSpan="2" FontSize="20" Click="buttonOsszes_Click"&gt;Összes&lt;/Button&gt;
+        &lt;Button x:Name="gombMentes" Grid.Row="1" Margin="501,330,4,0" Grid.RowSpan="2" FontSize="20" Click="gombMentes_Click"&gt;Mentés&lt;/Button&gt;
+
+    &lt;/Grid&gt;
+&lt;/Window&gt;
+
+</code></pre>
+                    </div>
+                </div>
+            </div>
+			
+			
+			<div class="doc-card mb-8">
+                <h2>3. Setup of the script behind the Main Window</h2>
+                <div class="code-wrapper">
+                    <div class="code-container">
+                        <div class="code-header flex justify-between items-center p-3 border-b"><span>MainWindow.xaml.cs</span><button class="copy-btn" onclick="copyCode('code-cli')">Copy</button></div>
+                        <pre><code id="code-csharp" class="code-csharp">
+using Microsoft.Win32;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
+using System.Windows.Shapes;
+
+namespace Varazsitalok
+{
+    /// &lt;summary&lt;
+    /// Interaction logic for MainWindow.xaml
+    /// &lt;/summary&lt;
+    public partial class MainWindow : Window
+    {
+        public MainWindow()
+        {
+            InitializeComponent();
+        }
+
+        public List<Varazsital> VarazsitalLista = new List<Varazsital>();
+
+        private void MenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                OpenFileDialog dialog = new OpenFileDialog();
+                dialog.ShowDialog();
+                if (dialog.FileName != "")
+                { 
+                    StreamReader sr = new StreamReader(dialog.FileName);
+
+                    string elsosor = sr.ReadLine(); // a címsort kiahgyjuk
+
+                    while (!sr.EndOfStream)
+                    {
+                        string[] m = sr.ReadLine().Split(';');
+
+                        Varazsital peldany = new Varazsital(m[0], m[1], int.Parse(m[2]), m[3], m[4]);
+                        VarazsitalLista.Add(peldany);
+                    }
+
+                    datagrid.ItemsSource = VarazsitalLista;
+                    var nevek = VarazsitalLista.Select(x => x.ItalNeve).Distinct();
+                    comboboxNevek.ItemsSource = nevek;
+                }
+            }
+            catch (Exception ex)
+            { 
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        private void comboboxNevek_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            string keresettNev = comboboxNevek.SelectedItem.ToString();
+
+            var talalat = VarazsitalLista.FindAll(x => x.ItalNeve == keresettNev);
+
+            datagrid.ItemsSource = talalat;
+        }
+
+        private void buttonOsszes_Click(object sender, RoutedEventArgs e)
+        {
+            datagrid.ItemsSource = VarazsitalLista;
+        }
+
+        private void gombMentes_Click(object sender, RoutedEventArgs e)
+        {
+            SaveFileDialog dialog = new SaveFileDialog();
+            dialog.ShowDialog();
+
+            if (dialog.FileName != "")
+            {
+                FileStream fs = new FileStream(dialog.FileName, FileMode.Create, FileAccess.Write);
+                StreamWriter sw = new StreamWriter(fs);
+
+                sw.WriteLine("ItalNeve;Hatóanyag;HatásIdőtartama;ErősségiSzint;Ritkaság");
+                foreach (Varazsital item in datagrid.ItemsSource as List<Varazsital>)
+                {
+                    sw.WriteLine($"{item.ItalNeve};{item.Hatoanyag};{item.HatasIdotartalma};{item.ErossegiSzint};{item.Ritkasag}");
+                }
+
+                sw.Close();
+                fs.Close();
+            }
+        }
+    }
+}
+
+
+</code></pre>
+                    </div>
+                </div>
+            </div>
+			
+			
+			<div class="doc-card mb-8">
+                <h2>4. A class for the project</h2>
+				<p>Here is a class that is usable in this WPF project.</p>
+                <div class="code-wrapper">
+                    <div class="code-container">
+                        <div class="code-header flex justify-between items-center p-3 border-b"><span>Varazsital.cs</span><button class="copy-btn" onclick="copyCode('code-cli')">Copy</button></div>
+                        <pre><code id="code-csharp" class="code-csharp">
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Varazsitalok
+{
+    public class Varazsital
+    {
+        public string ItalNeve { get; set; }
+        public string Hatoanyag { get; set; }
+        public int HatasIdotartalma { get; set; }
+        public string ErossegiSzint { get; set; }
+        public string Ritkasag { get; set; }
+
+        public Varazsital(string italNeve, string hatoanyag, int hatasIdotartalma, string erossegiSzint, string ritkasag)
+        {
+            ItalNeve = italNeve;
+            Hatoanyag = hatoanyag;
+            HatasIdotartalma = hatasIdotartalma;
+            ErossegiSzint = erossegiSzint;
+            Ritkasag = ritkasag;
+        }
+    }
+}
+
+
+
+</code></pre>
+                    </div>
+                </div>
+            </div>
+		</section>
     </main>
 
     <script>
