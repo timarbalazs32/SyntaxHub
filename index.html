@@ -595,7 +595,7 @@ app.get("/", (req, res) => {
 app.get("/filmek", (req, res) => {
     try {
         const sql = "SELECT * FROM filmek";
-        const result = db.prepare(sql).all();   // ← Ugyanaz!
+        const result = db.prepare(sql).all();
         return res.status(200).json(result);
     } catch (error) {
         return res.status(500).json(error.message);
